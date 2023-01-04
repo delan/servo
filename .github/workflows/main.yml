@@ -22,35 +22,9 @@ jobs:
           fetch-depth: 2
       # TODO: Remove this step when the compatibility issue between mozjs and
       #       Homebrew's Python 3.10 formula (servo/rust-mozjs#559) is fixed
-      - name: Select Python 3.9
+      - name: dd
         run: |
-          echo '======='
-          printf \%s\\n "$HOME" "$GITHUB_WORKSPACE"
-          mount
-          df -h
-          echo '======='
-          brew install python@3.9
-          cd $(dirname $(which python3.9))
-          rm -f python3 pip3
-          ln -s python3.9 python3
-          ln -s pip3.9 pip3
-          echo '======='
-          df -h
-          echo '======='
-      - name: Bootstrap
-        run: |
-          echo '======='
-          df -h
-          echo '======='
-          python3 -m pip install --upgrade pip virtualenv
-          brew bundle install --verbose --no-upgrade --file=etc/taskcluster/macos/Brewfile
-          brew bundle install --verbose --no-upgrade --file=etc/taskcluster/macos/Brewfile-build
-          rm -rf /usr/local/etc/openssl
-          rm -rf /usr/local/etc/openssl@1.1
-          brew install openssl@1.1 gnu-tar
-          echo '======='
-          df -h
-          echo '======='
+          dd status=progress if=/dev/zero of=space.test bs=1048576
 
   build_result:
     name: homu build finished
