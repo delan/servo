@@ -20,3 +20,4 @@ jobs:
       - name: ts
         run: |
           brew install moreutils
+          echo a | ts
