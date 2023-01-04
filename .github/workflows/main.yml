@@ -38,7 +38,10 @@ jobs:
           path: target
           key: target-${{ runner.os }}
       - name: Release build
-        run: python3 ./mach build --release
+        run: |
+          cp servobuild.example .servobuild
+          echo 'incremental = true' >> .servobuild
+          python3 ./mach build --release
       - name: Lockfile check
         run: ./etc/ci/lockfile_changed.sh
       - name: Forbidden panic check
