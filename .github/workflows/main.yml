@@ -25,6 +25,8 @@ jobs:
       - name: Select Python 3.9
         run: |
           echo '======='
+          printf \%s\\n "$HOME" "$GITHUB_WORKSPACE"
+          mount
           df -h
           echo '======='
           brew install python@3.9
