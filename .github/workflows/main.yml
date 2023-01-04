@@ -13,27 +13,33 @@ env:
   SHELL: /bin/bash
 
 jobs:
-  build-mac:
-    name: Build (macOS)
-    runs-on: macos-12
+  build-linux:
+    name: Build (Linux)
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: ts
-        run: brew install moreutils
-      - name: Select Python 3.9
-        run: |
-          brew install python@3.9 2>&1 | ts -s -m
-          cd $(dirname $(which python3.9))
-          rm -f python3 pip3
-          ln -s python3.9 python3
-          ln -s pip3.9 pip3
       - name: Bootstrap
         run: |
-          python3 -m pip install --upgrade pip virtualenv 2>&1 | ts -s -m
-          brew bundle install --verbose --no-upgrade --file=etc/taskcluster/macos/Brewfile 2>&1 | ts -s -m
-          brew bundle install --verbose --no-upgrade --file=etc/taskcluster/macos/Brewfile-build 2>&1 | ts -s -m
-          rm -rf /usr/local/etc/openssl
-          rm -rf /usr/local/etc/openssl@1.1
-          brew install openssl@1.1 gnu-tar 2>&1 | ts -s -m
+          python3 -m pip install --upgrade pip virtualenv
+          sudo apt update
+          python3 ./mach bootstrap
+      - name: Release build
+        run: python3 ./mach build --release
+      - name: Cache target
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: target-${{ runner.os }}
+      - name: Lockfile check
+        run: ./etc/ci/lockfile_changed.sh
+      - name: Forbidden panic check
+        run: ./etc/ci/check_no_panic.sh
+      - name: Package binary
+        run: tar -czf target.tar.gz target/release/servo resources
+      - name: Archive binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-binary
+          path: target.tar.gz
