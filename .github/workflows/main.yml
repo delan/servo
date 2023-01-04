@@ -17,14 +17,9 @@ jobs:
     name: Build (macOS)
     runs-on: macos-12
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-      # TODO: Remove this step when the compatibility issue between mozjs and
-      #       Homebrew's Python 3.10 formula (servo/rust-mozjs#559) is fixed
-      - name: dd
+      - name: ts
         run: |
-          dd status=progress if=/dev/zero of=space.test bs=1048576
+          echo a | ts
 
   build_result:
     name: homu build finished
