@@ -17,20 +17,23 @@ jobs:
     name: Build (macOS)
     runs-on: macos-12
     steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
       - name: ts
         run: brew install moreutils
       - name: Select Python 3.9
         run: |
-          brew install python@3.9 | ts -s -m
+          brew install python@3.9 2>&1 | ts -s -m
           cd $(dirname $(which python3.9))
           rm -f python3 pip3
           ln -s python3.9 python3
           ln -s pip3.9 pip3
       - name: Bootstrap
         run: |
-          python3 -m pip install --upgrade pip virtualenv | ts -s -m
-          brew bundle install --verbose --no-upgrade --file=etc/taskcluster/macos/Brewfile | ts -s -m
-          brew bundle install --verbose --no-upgrade --file=etc/taskcluster/macos/Brewfile-build | ts -s -m
+          python3 -m pip install --upgrade pip virtualenv 2>&1 | ts -s -m
+          brew bundle install --verbose --no-upgrade --file=etc/taskcluster/macos/Brewfile 2>&1 | ts -s -m
+          brew bundle install --verbose --no-upgrade --file=etc/taskcluster/macos/Brewfile-build 2>&1 | ts -s -m
           rm -rf /usr/local/etc/openssl
           rm -rf /usr/local/etc/openssl@1.1
-          brew install openssl@1.1 gnu-tar | ts -s -m
+          brew install openssl@1.1 gnu-tar 2>&1 | ts -s -m
