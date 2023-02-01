@@ -27,6 +27,7 @@ import update  # noqa: F401,E402
 
 TRACKER_API = "https://build.servo.org/intermittent-tracker"
 TRACKER_API_ENV_VAR = "INTERMITTENT_TRACKER_API"
+TRACKER_DASHBOARD_SECRET_ENV_VAR = "INTERMITTENT_TRACKER_DASHBOARD_SECRET"
 GITHUB_API_TOKEN_ENV_VAR = "INTERMITTENT_TRACKER_GITHUB_API_TOKEN"
 
 
@@ -145,6 +146,48 @@ def run_tests(**kwargs):
     logger.add_handler(handler)
 
     wptrunner.run_tests(**kwargs)
+
+    if TRACKER_DASHBOARD_SECRET_ENV_VAR in os.environ:
+        body = []
+        for failure in handler.test_failures:
+            # print(f'>>> {repr(failure)}')
+            body.append({
+                'path': failure['test'],
+                'subtest': None,
+                'expected': failure['expected'],
+                'actual': failure['status'],
+                'time': failure['time'] // 1000,
+                'message': failure.get('message'),
+                'stack': failure.get('stack'),
+                'branch': os.environ.get('SERVO_BRANCH'),
+                'build_url': os.environ.get('SERVO_BUILD_URL'),
+                'pull_url': os.environ.get('SERVO_PULL_URL'),
+            })
+        for (path, failures) in handler.subtest_failures.items():
+            for failure in failures:
+                # print(f'>>> {repr(failure)}')
+                body.append({
+                    'path': path,
+                    'subtest': failure['subtest'],
+                    'expected': failure['expected'],
+                    'actual': failure['status'],
+                    'time': failure['time'] // 1000,
+                    'message': failure.get('message'),
+                    'stack': failure.get('stack'),
+                    'branch': os.environ.get('SERVO_BRANCH'),
+                    'build_url': os.environ.get('SERVO_BUILD_URL'),
+                    'pull_url': os.environ.get('SERVO_PULL_URL'),
+                })
+        request = urllib.request.Request(
+            f'{os.environ.get(TRACKER_API_ENV_VAR, TRACKER_API)}/dashboard/attempts',
+            method='POST',
+            data=json.dumps(body).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {os.environ[TRACKER_DASHBOARD_TOKEN_ENV_VAR]}',
+                'Content-Type': 'application/json',
+            })
+        urllib.request.urlopen(request)
+
     if handler.unexpected_results and filter_intermittents_output:
         all_filtered = filter_intermittents(
             handler.unexpected_results,
