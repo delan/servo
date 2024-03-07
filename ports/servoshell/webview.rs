@@ -118,6 +118,12 @@ where
         self.focused_webview_id.clone()
     }
 
+    pub fn creation_order(&self) -> impl Iterator<Item = (&WebViewId, &WebView)> {
+        self.creation_order
+            .iter()
+            .flat_map(move |webview_id| self.webviews.get(webview_id).map(|b| (webview_id, b)))
+    }
+
     pub fn painting_order(&self) -> impl Iterator<Item = (&WebViewId, &WebView)> {
         self.painting_order
             .iter()
@@ -602,28 +608,6 @@ where
                 },
                 EmbedderMsg::WebViewPaintingOrder(webview_ids) => {
                     self.painting_order = webview_ids;
-
-                    if let Some(&newest_webview_id) = self.creation_order.last() {
-                        let mut newest_webview_is_visible = false;
-
-                        // Hide any visible browsers other than the most recently created.
-                        // TODO stop doing this once we have full multiple browser support
-                        for &webview_id in self.painting_order.iter() {
-                            if webview_id != newest_webview_id {
-                                self.event_queue
-                                    .push(EmbedderEvent::HideWebView(webview_id));
-                            } else {
-                                newest_webview_is_visible = true;
-                            }
-                        }
-
-                        // If the most recently created browser is not visible, show it.
-                        // TODO stop doing this once we have full multiple browser support
-                        if !newest_webview_is_visible {
-                            self.event_queue
-                                .push(EmbedderEvent::ShowWebView(newest_webview_id));
-                        }
-                    }
                 },
                 EmbedderMsg::Keyboard(key_event) => {
                     self.handle_key_from_servo(webview_id, key_event);
@@ -731,7 +715,7 @@ where
                 },
                 EmbedderMsg::EventDelivered(event) => match (webview_id, event) {
                     (Some(webview_id), CompositorEventVariant::MouseButtonEvent) => {
-                        trace!("{}: Got a mouse button event", webview_id);
+                        warn!("{}: Got a mouse button event", webview_id);
                         self.event_queue
                             .push(EmbedderEvent::RaiseWebViewToTop(webview_id));
                         self.event_queue

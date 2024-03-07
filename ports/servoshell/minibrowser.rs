@@ -15,7 +15,7 @@ use egui_winit::EventResponse;
 use euclid::{Length, Point2D, Rect, Scale, Size2D};
 use gleam::gl;
 use glow::NativeFramebuffer;
-use log::{trace, warn};
+use log::{info, trace, warn};
 use servo::compositing::windowing::EmbedderEvent;
 use servo::msg::constellation_msg::TraversalDirection;
 use servo::rendering_context::RenderingContext;
@@ -192,17 +192,58 @@ impl Minibrowser {
                     );
                     ui.cursor().min.y
                 });
+
+            let mut embedder_events = vec![];
+            let focused_webview_id = webviews.focused_webview_id();
+            let mut selected_tab = focused_webview_id;
+            let InnerResponse { inner: height, .. } =
+                TopBottomPanel::top("tab bar").show(ctx, |ui| {
+                    ui.allocate_ui_with_layout(
+                        ui.available_size(),
+                        egui::Layout::left_to_right(egui::Align::Center),
+                        |ui| {
+                            if ui.button("❌").clicked() {
+                                if let Some(webview_id) = focused_webview_id {
+                                    embedder_events.push(EmbedderEvent::CloseWebView(webview_id));
+                                }
+                            }
+
+                            let mut clicked_tab_webview_id = None;
+                            for (&webview_id, _) in webviews.creation_order() {
+                                let text = format!("{:?}", webview_id.0);
+                                let tab =
+                                    ui.selectable_value(&mut selected_tab, Some(webview_id), text);
+                                if tab.clicked() {
+                                    info!("Clicked tab {webview_id}");
+                                    clicked_tab_webview_id = Some(webview_id);
+                                }
+                            }
+                            if let Some(clicked_tab_webview_id) = clicked_tab_webview_id {
+                                for (&webview_id, _) in webviews.creation_order() {
+                                    if webview_id != clicked_tab_webview_id {
+                                        embedder_events
+                                            .push(EmbedderEvent::HideWebView(webview_id));
+                                    }
+                                }
+                                embedder_events
+                                    .push(EmbedderEvent::RaiseWebViewToTop(clicked_tab_webview_id));
+                                embedder_events
+                                    .push(EmbedderEvent::FocusWebView(clicked_tab_webview_id));
+                            }
+                        },
+                    );
+                    ui.cursor().min.y
+                });
             *toolbar_height = Length::new(height);
 
+            let Some(focused_webview_id) = focused_webview_id else {
+                return;
+            };
+            let Some(focused_webview) = webviews.get_mut(focused_webview_id) else {
+                return;
+            };
             let scale =
                 Scale::<_, DeviceIndependentPixel, DevicePixel>::new(ctx.pixels_per_point());
-            let Some(focused_webview_id) = webviews.focused_webview_id() else {
-                return;
-            };
-            let Some(webview) = webviews.get_mut(focused_webview_id) else {
-                return;
-            };
-            let mut embedder_events = vec![];
             CentralPanel::default()
                 .frame(Frame::none())
                 .show(ctx, |ui| {
@@ -211,8 +252,8 @@ impl Minibrowser {
                     let Vec2 { x, y } = ui.available_size();
                     let size = Size2D::new(x, y);
                     let rect = Rect::new(origin, size) * scale;
-                    if rect != webview.rect {
-                        webview.rect = rect;
+                    if rect != focused_webview.rect {
+                        focused_webview.rect = rect;
                         embedder_events
                             .push(EmbedderEvent::MoveResizeWebView(focused_webview_id, rect));
                     }
