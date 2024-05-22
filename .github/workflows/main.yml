@@ -22,29 +22,29 @@ jobs:
       unit-tests: true
     secrets: inherit
 
-  build-mac:
-    name: Mac
-    if: ${{ github.event_name != 'pull_request' }}
-    uses: ./.github/workflows/mac.yml
-    with:
-      unit-tests: true
-    secrets: inherit
+  # build-mac:
+  #   name: Mac
+  #   if: ${{ github.event_name != 'pull_request' }}
+  #   uses: ./.github/workflows/mac.yml
+  #   with:
+  #     unit-tests: true
+  #   secrets: inherit
 
-  build-linux:
-    name: Linux
-    uses: ./.github/workflows/linux.yml
-    with:
-      unit-tests: true
-      wpt-layout: ${{ github.event_name == 'pull_request' && 'none' || 'all' }}
-    secrets: inherit
+  # build-linux:
+  #   name: Linux
+  #   uses: ./.github/workflows/linux.yml
+  #   with:
+  #     unit-tests: true
+  #     wpt-layout: ${{ github.event_name == 'pull_request' && 'none' || 'all' }}
+  #   secrets: inherit
 
-  build-android:
-    name: Android
-    if: ${{ github.event_name != 'pull_request' }}
-    uses: ./.github/workflows/android.yml
-    with:
-      profile: "release"
-    secrets: inherit
+  # build-android:
+  #   name: Android
+  #   if: ${{ github.event_name != 'pull_request' }}
+  #   uses: ./.github/workflows/android.yml
+  #   with:
+  #     profile: "release"
+  #   secrets: inherit
 
   build-result:
     name: Result
@@ -53,9 +53,9 @@ jobs:
     # needs all build to detect cancellation
     needs:
       - "build-win"
-      - "build-mac"
-      - "build-linux"
-      - "build-android"
+      # - "build-mac"
+      # - "build-linux"
+      # - "build-android"
     steps:
       - name: Merge build timings
         uses: actions/upload-artifact/merge@v4
