@@ -13,7 +13,7 @@ env:
 jobs:
   create-draft-release:
     # This job is only useful when run on upstream servo.
-    if: github.repository == 'servo/servo' || github.event_name == 'workflow_dispatch'
+    if: github.repository == 'servo/servo'
     name: Create Draft GH Release
     runs-on: ubuntu-latest
     steps:
@@ -41,7 +41,7 @@ jobs:
 
   publish-nightly-release:
     # This job is only useful when run on upstream servo.
-    if: always() && (github.repository == 'servo/servo' || github.event_name == 'workflow_dispatch')
+    if: always() && (github.repository == 'servo/servo')
     name: Publish GH Release for nightly
     runs-on: ubuntu-latest
     steps:
@@ -79,13 +79,9 @@ jobs:
     # This job is only useful when run on upstream servo.
     if: github.repository == 'servo/servo' || github.event_name == 'workflow_dispatch'
     name: Upload nightly (Windows)
-    needs:
-      - create-draft-release
     uses: ./.github/workflows/windows.yml
     with:
       profile: "production"
-      upload: true
-      github-release-id: ${{ needs.create-draft-release.outputs.release-id }}
       force-github-hosted-runner: true  # <https://github.com/servo/servo/issues/33296>
     secrets: inherit
 
@@ -93,26 +89,18 @@ jobs:
     # This job is only useful when run on upstream servo.
     if: github.repository == 'servo/servo' || github.event_name == 'workflow_dispatch'
     name: Upload nightly (macOS)
-    needs:
-      - create-draft-release
     uses: ./.github/workflows/mac.yml
     with:
       profile: "production"
-      upload: true
-      github-release-id: ${{ needs.create-draft-release.outputs.release-id }}
     secrets: inherit
 
   upload-linux:
     # This job is only useful when run on upstream servo.
     if: github.repository == 'servo/servo' || github.event_name == 'workflow_dispatch'
     name: Upload nightly (Linux)
-    needs:
-      - create-draft-release
     uses: ./.github/workflows/linux.yml
     with:
       profile: "production"
-      upload: true
-      github-release-id: ${{ needs.create-draft-release.outputs.release-id }}
       force-github-hosted-runner: true  # <https://github.com/servo/servo/issues/33296>
     secrets: inherit
 
@@ -120,30 +108,22 @@ jobs:
     # This job is only useful when run on upstream servo.
     if: github.repository == 'servo/servo' || github.event_name == 'workflow_dispatch'
     name: Upload nightly (Android)
-    needs:
-      - create-draft-release
     permissions:
       id-token: write
       attestations: write
     uses: ./.github/workflows/android.yml
     with:
       profile: "release"
-      upload: true
-      github-release-id: ${{ needs.create-draft-release.outputs.release-id }}
     secrets: inherit
 
   upload-ohos:
     # This job is only useful when run on upstream servo.
     if: github.repository == 'servo/servo' || github.event_name == 'workflow_dispatch'
     name: Upload nightly (OpenHarmony)
-    needs:
-      - create-draft-release
     permissions:
       id-token: write
       attestations: write
     uses: ./.github/workflows/ohos.yml
     with:
       profile: "release"
-      upload: true
-      github-release-id: ${{ needs.create-draft-release.outputs.release-id }}
     secrets: inherit
