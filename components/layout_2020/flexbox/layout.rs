@@ -1163,6 +1163,7 @@ impl<'a> FlexItem<'a> {
                 .config
                 .resolve_align_self_for_child(box_.style()),
         );
+        let align_self = AlignItems::normal();
         let (flex_base_size, flex_base_size_is_definite) = box_.flex_base_size(
             flex_context.layout_context,
             &containing_block.into(),
