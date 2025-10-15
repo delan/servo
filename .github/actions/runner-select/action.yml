@@ -19,13 +19,13 @@ inputs:
     default: ""
 outputs:
   unique-id:
-    value: ${{ steps.select.outputs.unique_id }}
+    value: ${{ steps.init.outputs.unique_id }}
   selected-runner-label:
-    value: ${{ steps.select.outputs.selected_runner_label }}
+    value: ${{ steps.decision.outputs.selected_runner_label }}
   runner-type-label:
-    value: ${{ steps.select.outputs.runner_type_label }}
+    value: ${{ steps.decision.outputs.runner_type_label }}
   is-self-hosted:
-    value: ${{ steps.select.outputs.is_self_hosted }}
+    value: ${{ steps.decision.outputs.is_self_hosted }}
 
 runs:
   using: "composite"
@@ -41,15 +41,6 @@ runs:
 
         set -euo pipefail
 
-        fall_back_to_github_hosted() {
-          echo 'Falling back to GitHub-hosted runner'
-          echo "fall_back_to_github_hosted=true" | tee -a $GITHUB_OUTPUT
-          echo "selected_runner_label=$github_hosted_runner_label" | tee -a $GITHUB_OUTPUT
-          echo "runner_type_label=$github_hosted_runner_label" | tee -a $GITHUB_OUTPUT
-          echo 'is_self_hosted=false' | tee -a $GITHUB_OUTPUT
-          exit 0
-        }
-
         # Generate a unique id that allows the workload job to find the runner
         # we are reserving for it (via runner labels), and allows the timeout
         # job to find the workload job run (via the job’s friendly name), even
@@ -62,12 +53,12 @@ runs:
         # <https://github.com/servo/servo/settings/variables/actions>
         if [ -n '${{ inputs.NO_SELF_HOSTED_RUNNERS }}' ]; then
           echo 'NO_SELF_HOSTED_RUNNERS is set!'
-          fall_back_to_github_hosted
+          echo "fall_back_to_github_hosted=true" | tee -a $GITHUB_OUTPUT
         fi
 
         if [ '${{ inputs.force-github-hosted-runner }}' = true ]; then
           echo 'inputs.force-github-hosted-runner is set!'
-          fall_back_to_github_hosted
+          echo "fall_back_to_github_hosted=true" | tee -a $GITHUB_OUTPUT
         fi
 
         artifact_path=$(mktemp)
@@ -86,12 +77,13 @@ runs:
         name: servo-ci-runners_${{ steps.init.outputs.unique_id }}
         path: ${{ steps.init.outputs.artifact_path }}
 
-    - name: Find a server and reserve a runner
-      if: ${{ !fromJSON(steps.init.outputs.fall_back_to_github_hosted) }}
+    - id: decision
+      name: Find a server and reserve a runner
       shell: bash
       run: |
         github_hosted_runner_label='${{ inputs.github-hosted-runner-label }}'
         self_hosted_image_name='${{ inputs.self-hosted-image-name }}'
+        fall_back_to_github_hosted='${{ steps.init.outputs.fall_back_to_github_hosted }}'
         unique_id='${{ steps.init.outputs.unique_id }}'
 
         set -euo pipefail
@@ -104,6 +96,10 @@ runs:
           echo 'is_self_hosted=false' | tee -a $GITHUB_OUTPUT
           exit 0
         }
+
+        if [ "$fall_back_to_github_hosted" = true ]; then
+          fall_back_to_github_hosted
+        fi
 
         for monitor_api_base_url in $(printf \%s\\n \
           http://home.daz.cat:8000 \
