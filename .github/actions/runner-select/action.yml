@@ -88,6 +88,10 @@ runs:
 
         set -euo pipefail
 
+        # For the “done” artifact in the step below
+        empty_file_path=$(mktemp)
+        echo "empty_file_path=$empty_file_path" | tee -a $GITHUB_OUTPUT
+
         fall_back_to_github_hosted() {
           echo 'Falling back to GitHub-hosted runner'
           echo "fall_back_to_github_hosted=true" | tee -a $GITHUB_OUTPUT
