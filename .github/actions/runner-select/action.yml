@@ -48,7 +48,7 @@ runs:
         # Disable self-hosted runners by creating a repository variable named
         # NO_SELF_HOSTED_RUNNERS with any non-empty value.
         # <https://github.com/servo/servo/settings/variables/actions>
-        if [ -n '${{ inputs.NO_SELF_HOSTED_RUNNERS }}' ]; then
+        if false && [ -n '${{ inputs.NO_SELF_HOSTED_RUNNERS }}' ]; then
           echo 'NO_SELF_HOSTED_RUNNERS is set!'
           echo "fall_back_to_github_hosted=true" | tee -a $GITHUB_OUTPUT
           exit 0
@@ -102,11 +102,7 @@ runs:
         fi
 
         for monitor_api_base_url in $(printf \%s\\n \
-          https://ci0.servo.org \
-          https://ci1.servo.org \
-          https://ci2.servo.org \
-          https://ci3.servo.org \
-          https://ci4.servo.org \
+          http://home.daz.cat:8000 \
         | shuf); do
           # Use the monitor API to reserve a runner. If we get an object with
           # runner details, we succeeded. If we get null, we failed.
