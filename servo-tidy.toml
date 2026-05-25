@@ -8,6 +8,7 @@ disallowed-coauthors = [
     "gemini-code-assist@google.com",
     "noreply@anthropic.com",
     "claude@anthropic.com",
+    "bad@example.net",
 ]
 
 [ignore]
